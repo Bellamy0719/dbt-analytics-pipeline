@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: mart_customer_dashboard
+    description: "Customer-level aggregated dashboard model showing total orders, average order value, and first order date."
+    columns:
+      - name: customer_unique_id
+        description: "Global unique customer identifier."
+        tests:
+          - not_null
+
+      - name: customer_city
+        description: "City of the customer."
+        tests:
+          - not_null
+
+      - name: customer_state
+        description: "State of the customer."
+        tests:
+          - not_null
+
+      - name: total_orders
+        description: "Total number of distinct orders placed by this customer."
+        tests:
+          - not_null
+
+      - name: avg_order_value
+        description: "Average order value across all orders for this customer."
+        tests:
+          - not_null
+
+      - name: first_order_date
+        description: "The earliest order date for this customer."
+        tests:
+          - not_null

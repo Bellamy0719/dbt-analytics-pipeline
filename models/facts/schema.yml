@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: fct_sales_summary
+    description: "Aggregated fact table summarizing each order’s total value, product count, and order date."
+    columns:
+      - name: order_id
+        description: "Unique identifier for each order."
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: "Foreign key referencing the customer who placed the order."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+
+      - name: total_order_value
+        description: "Total order value (price + freight) aggregated per order."
+        tests:
+          - not_null
+
+      - name: total_products
+        description: "Number of unique products in this order."
+        tests:
+          - not_null
+
+      - name: order_date
+        description: "Earliest date associated with this order."
+        tests:
+          - not_null
+
