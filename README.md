@@ -52,8 +52,8 @@ Each layer applies consistent naming conventions, schema testing, and data docum
 
 ### Workflow
 
-## Step 1. Define Data Sources
-We start by declaring where our raw data lives. In this case, the PostgreSQL public schema.
+### Step 1. Define Data Sources
+We start by declaring where our raw data lives. In this case, the PostgreSQL public schema. 
 ```
 version: 2
 sources:
@@ -63,14 +63,88 @@ sources:
       - name: olist_orders_dataset
       - name: olist_customers_dataset
       - name: olist_order_items_dataset
+#code from sources.yml 
 ```
-dbt doesn’t store data directly. Instead, it uses the source() function to reference existing raw tables in your database.
-This ensures lineage tracking starts from the very origin of your data.
+dbt doesn’t store data directly. Instead, it uses the source() function to reference existing raw tables in the database.
+This ensures lineage tracking starts from the very origin of data.
 
 Once defined, we can use {{ source('raw', 'olist_orders_dataset') }} inside models to reference these tables.
 
-## Step 1. Define Data Sources
+### Step 2. Build the Staging Layer
+The staging layer cleans and standardizes raw tables. For example, converting timestamps and renaming columns for consistency.
+```
+select
+    order_id,
+    customer_id,
+    order_status,
+    order_purchase_timestamp::date as order_date,
+    order_approved_at::date as approved_date,
+    order_delivered_customer_date::date as delivered_date
+from {{ source('raw', 'olist_orders_dataset') }}
+where order_status in ('delivered', 'shipped')
+```
+Besides, we use schema tests to ensure data quality (e.g. no null IDs, valid relationships)
 
+```
+models:
+  - name: stg_orders
+    description: "Cleaned and standardized orders data with essential timestamps and delivery status"
+    columns:
+      - name: order_id
+        description: "Unique order identifier"
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: "Foreign key linking to stg_customers table"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+```
+
+### Step 3. Create the Facts Layer
+The facts layer aggregates business events, combining orders and items to calculate metrics like order value or product count.
+```
+select
+    o.order_id,
+    o.customer_id,
+    sum(i.price + i.freight_value) as total_order_value,
+    count(distinct i.product_id) as total_products,
+    min(o.order_date) as order_date
+from {{ ref('stg_orders') }} o
+join {{ ref('stg_order_items') }} i using (order_id)
+group by 1, 2
+
+```
+
+### Step 4. Build the Marts Layer
+The marts layer produces analytics-ready tables. For example, a customer dashboard aggregating key KPIs.
+So we can use BI tools such as Tableau, Quicksight to analyze the mart dashboard directly.
+```
+select
+    c.customer_unique_id,
+    c.customer_city,
+    c.customer_state,
+    count(distinct f.order_id) as total_orders,
+    round(avg(f.total_order_value), 2) as avg_order_value,
+    min(f.order_date) as first_order_date
+from {{ ref('fct_sales_summary') }} f
+join {{ ref('stg_customers') }} c using (customer_id)
+group by 1, 2, 3
+```
+
+### Step 5. Run Data Tests
+dbt automatically validates the models using built-in tests for nulls, uniqueness, and relationships.
+
+
+
+### Step 6. Generate Documentation & Lineage Graph
+Finally, generate the interactive documentation and lineage graph
+
+Then open the link (default: http://localhost:8080) to explore the model lineage
 
 ```
 brazilian_e_commerce/
