@@ -139,12 +139,15 @@ group by 1, 2, 3
 ### Step 5. Run Data Tests
 dbt automatically validates the models using built-in tests for nulls, uniqueness, and relationships.
 
+![cmd](screenshots/cmd.png)
 
 
 ### Step 6. Generate Documentation & Lineage Graph
 Finally, generate the interactive documentation and lineage graph
 
 Then open the link (default: http://localhost:8080) to explore the model lineage
+
+![data_lineage](screenshots/dbt_data_lineage.png)
 
 ```
 brazilian_e_commerce/
