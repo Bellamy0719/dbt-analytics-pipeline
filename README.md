@@ -72,6 +72,7 @@ Once defined, we can use {{ source('raw', 'olist_orders_dataset') }} inside mode
 
 ### Step 2. Build the Staging Layer
 The staging layer cleans and standardizes raw tables. For example, converting timestamps and renaming columns for consistency.
+Files on [stg_orders](models\staging\stg_orders.sql)
 ```
 select
     order_id,
@@ -84,7 +85,7 @@ from {{ source('raw', 'olist_orders_dataset') }}
 where order_status in ('delivered', 'shipped')
 ```
 Besides, we use schema tests to ensure data quality (e.g. no null IDs, valid relationships)
-
+Files on [stg_schema](models\staging\schema.yml)
 ```
 models:
   - name: stg_orders
@@ -107,6 +108,7 @@ models:
 
 ### Step 3. Create the Facts Layer
 The facts layer aggregates business events, combining orders and items to calculate metrics like order value or product count.
+Files on [fct_sales_summary](models\facts\fct_sales_summary.sql)
 ```
 select
     o.order_id,
@@ -117,12 +119,12 @@ select
 from {{ ref('stg_orders') }} o
 join {{ ref('stg_order_items') }} i using (order_id)
 group by 1, 2
-
 ```
 
 ### Step 4. Build the Marts Layer
 The marts layer produces analytics-ready tables. For example, a customer dashboard aggregating key KPIs.
 So we can use BI tools such as Tableau, Quicksight to analyze the mart dashboard directly.
+Files on [mart_customer_dashboard](models\marts\mart_customer_dashboard.sql)
 ```
 select
     c.customer_unique_id,
@@ -152,8 +154,20 @@ dbt docs serve
 ```
 
 Then open the link (default: http://localhost:8080) to explore the model lineage
-![dashboard](screenshots/dbt_dashboard.png)
+![dashboard](screenshots/dbt_facts_dashboard.png)
 ![data_lineage](screenshots/dbt_data_lineage.png)
+
+
+### Tech Stack
+| Layer          | Technology     | Description                                |
+| -------------- | -------------- | ------------------------------------------ |
+| Transformation | **dbt**        | SQL-based transformation, testing, lineage |
+| Database       | **PostgreSQL** | Data warehouse backend                     |
+| Documentation  | **dbt docs**   | Auto-generated model & lineage docs        |
+| Testing        | **dbt tests**  | Built-in and custom data quality checks    |
+
+
+### Repository Structure
 
 ```
 brazilian_e_commerce/
